@@ -22,31 +22,52 @@ def home():
 # Helper function for feature engineering
 # ---------------------------------------------------------
 def prepare_input(data):
-    """
-    Prepare input data for the trained model.
-
-    Derives:
-    - Product_Category_Code from Product_Id
-    - Store_Age_Years from Store_Establishment_Year
-    """
-
     data = data.copy()
 
-    # Extract first two characters of Product_Id
-    data['Product_Id_char'] = data['Product_Id'].str[:2]
+    # --------------------------------------------------
+    # Handle Product Category Code
+    # --------------------------------------------------
 
-    # Calculate store age
-    REFERENCE_YEAR = 2026
-    data['Store_Age_Years'] = (
-        REFERENCE_YEAR - data['Store_Establishment_Year']
-    )
+    # Raw single-product input
+    if 'Product_Id' in data.columns:
+        data['Product_Category_Code'] = data['Product_Id'].str[:2]
 
-    # Drop columns that were removed during model training
+    # Already feature-engineered batch input
+    elif 'Product_Id_char' in data.columns:
+        data['Product_Category_Code'] = data['Product_Id_char']
+
+    # --------------------------------------------------
+    # Handle Store Age
+    # --------------------------------------------------
+
+    # Raw single-product input
+    if 'Store_Age_Years' not in data.columns:
+        if 'Store_Establishment_Year' in data.columns:
+            REFERENCE_YEAR = 2026
+            data['Store_Age_Years'] = (
+                REFERENCE_YEAR - data['Store_Establishment_Year']
+            )
+
+    # --------------------------------------------------
+    # Handle Product Type
+    # --------------------------------------------------
+
+    # Feature-engineered batch input
+    if 'Product_Type' not in data.columns:
+        if 'Product_Type_Category' in data.columns:
+            data['Product_Type'] = data['Product_Type_Category']
+
+    # --------------------------------------------------
+    # Remove columns not used by the model
+    # --------------------------------------------------
+
     data = data.drop(
         columns=[
             'Product_Id',
+            'Product_Id_char',
             'Store_Id',
-            'Store_Establishment_Year'
+            'Store_Establishment_Year',
+            'Product_Type_Category'
         ],
         errors='ignore'
     )
