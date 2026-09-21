@@ -51,7 +51,7 @@ with col1:
     Product_Weight = st.number_input(
         "Product Weight",
         min_value=0.0,
-        value=10.0
+        value=12.0
     )
 
     Product_Sugar_Content = st.selectbox(
@@ -80,7 +80,7 @@ with col1:
             "Soft Drinks",
             "Health and Hygiene",
             "Baking Goods",
-            "Bread",
+            "Breads",
             "Breakfast",
             "Frozen Foods",
             "Fruits and Vegetables",
@@ -118,7 +118,7 @@ with col2:
         [
             "High",
             "Medium",
-            "Low"
+            "Small"
         ]
     )
 
