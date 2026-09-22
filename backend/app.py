@@ -25,46 +25,32 @@ def prepare_input(data):
     data = data.copy()
 
     # --------------------------------------------------
-    # Handle Product Category Code
+    # Product_Id_char: keep as-is for batch input,
+    # derive from Product_Id for raw single-product input
     # --------------------------------------------------
-
-    # Raw single-product input
-    if 'Product_Id' in data.columns:
-        data['Product_Category_Code'] = data['Product_Id'].str[:2]
-
-    # Already feature-engineered batch input
-    elif 'Product_Id_char' in data.columns:
-        data['Product_Category_Code'] = data['Product_Id_char']
+    if 'Product_Id_char' not in data.columns and 'Product_Id' in data.columns:
+        data['Product_Id_char'] = data['Product_Id'].str[:2]
 
     # --------------------------------------------------
-    # Handle Store Age
+    # Store_Age_Years: derive from establishment year if missing
     # --------------------------------------------------
-
-    # Raw single-product input
-    if 'Store_Age_Years' not in data.columns:
-        if 'Store_Establishment_Year' in data.columns:
-            REFERENCE_YEAR = 2026
-            data['Store_Age_Years'] = (
-                REFERENCE_YEAR - data['Store_Establishment_Year']
-            )
+    if 'Store_Age_Years' not in data.columns and 'Store_Establishment_Year' in data.columns:
+        REFERENCE_YEAR = 2026
+        data['Store_Age_Years'] = REFERENCE_YEAR - data['Store_Establishment_Year']
 
     # --------------------------------------------------
-    # Handle Product Type
+    # Product_Type fallback for batch input
     # --------------------------------------------------
-
-    # Feature-engineered batch input
-    if 'Product_Type' not in data.columns:
-        if 'Product_Type_Category' in data.columns:
-            data['Product_Type'] = data['Product_Type_Category']
+    if 'Product_Type' not in data.columns and 'Product_Type_Category' in data.columns:
+        data['Product_Type'] = data['Product_Type_Category']
 
     # --------------------------------------------------
-    # Remove columns not used by the model
+    # Drop only columns the model was NOT trained on
+    # (NOTE: Product_Id_char is retained — the model needs it)
     # --------------------------------------------------
-
     data = data.drop(
         columns=[
             'Product_Id',
-            'Product_Id_char',
             'Store_Id',
             'Store_Establishment_Year',
             'Product_Type_Category'
@@ -73,6 +59,7 @@ def prepare_input(data):
     )
 
     return data
+
 
 
 # ---------------------------------------------------------
