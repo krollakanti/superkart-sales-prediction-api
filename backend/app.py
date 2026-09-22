@@ -67,24 +67,16 @@ def prepare_input(data):
 # ---------------------------------------------------------
 @app.post('/v1/product')
 def predict_product_sales():
-
-    # Get JSON data from request
-    product_data = request.get_json()
-
-    # Convert JSON object to DataFrame
-    input_data = pd.DataFrame([product_data])
-
-    # Prepare data using the same feature engineering
-    # used during model development
-    input_data = prepare_input(input_data)
-
-    # Make prediction
-    prediction = model.predict(input_data)[0]
-
-    # Return prediction
-    return jsonify({
-        'Predicted_Product_Store_Sales_Total': round(float(prediction), 2)
-    })
+    try:
+        product_data = request.get_json()
+        input_data = pd.DataFrame([product_data])
+        input_data = prepare_input(input_data)
+        prediction = model.predict(input_data)[0]
+        return jsonify({
+            'Predicted_Product_Store_Sales_Total': round(float(prediction), 2)
+        })
+    except Exception as e:
+        return jsonify({'error': str(e), 'type': type(e).__name__}), 500
 
 
 # ---------------------------------------------------------
