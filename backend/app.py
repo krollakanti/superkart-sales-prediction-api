@@ -84,37 +84,45 @@ def predict_product_sales():
 # ---------------------------------------------------------
 @app.post('/v1/productbatch')
 def predict_product_sales_batch():
+    try:
+        # Get uploaded CSV file
+        file = request.files['file']
 
-    # Get uploaded CSV file
-    file = request.files['file']
+        # Read CSV
+        input_data = pd.read_csv(file)
 
-    # Read CSV
-    input_data = pd.read_csv(file)
+        # Pick whichever identifier column is present
+        if 'Product_Id' in input_data.columns:
+            product_ids = input_data['Product_Id'].tolist()
+        elif 'Product_Id_char' in input_data.columns:
+            # No unique per-row id in batch CSV — use row index prefixed by category code
+            product_ids = [
+                f"{code}_{i}" for i, code in enumerate(input_data['Product_Id_char'])
+            ]
+        else:
+            product_ids = list(range(len(input_data)))
 
-    # Keep original Product_Id for the output
-    product_ids = input_data['Product_Id'].tolist()
+        # Prepare data (same feature engineering as single prediction)
+        model_input = prepare_input(input_data)
 
-    # Prepare data
-    model_input = prepare_input(input_data)
+        # Generate predictions
+        predictions = model.predict(model_input)
 
-    # Generate predictions
-    predictions = model.predict(model_input)
+        # Build output
+        output_data = pd.DataFrame({
+            'Product_Id': product_ids,
+            'Predicted_Product_Store_Sales_Total': predictions.round(2)
+        })
 
-    # Create output DataFrame
-    output_data = pd.DataFrame({
-        'Product_Id': product_ids,
-        'Predicted_Product_Store_Sales_Total': predictions
-    })
+        return jsonify(output_data.to_dict(orient='records'))
 
-    # Round predictions
-    output_data['Predicted_Product_Store_Sales_Total'] = (
-        output_data['Predicted_Product_Store_Sales_Total'].round(2)
-    )
-
-    # Return results as JSON
-    return jsonify(
-        output_data.to_dict(orient='records')
-    )
+    except Exception as e:
+        import traceback
+        return jsonify({
+            'error': str(e),
+            'type': type(e).__name__,
+            'traceback': traceback.format_exc()
+        }), 500
 
 
 # ---------------------------------------------------------
